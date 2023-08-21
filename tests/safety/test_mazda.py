@@ -8,7 +8,7 @@ from panda.tests.safety.common import CANPackerPanda
 
 class TestMazdaSafety(common.PandaSafetyTest, common.DriverTorqueSteeringSafetyTest):
 
-  TX_MSGS = [[0x243, 0], [0x09d, 0], [0x440, 0]]
+  TX_MSGS = [[0x243, 0], [0x09d, 0], [0x440, 0], [0x249, 1]]
   STANDSTILL_THRESHOLD = .1
   RELAY_MALFUNCTION_ADDR = 0x243
   RELAY_MALFUNCTION_BUS = 0
