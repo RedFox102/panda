@@ -51,7 +51,7 @@
 #define SAFETY_FAW 26U
 #define SAFETY_BODY 27U
 #define SAFETY_HYUNDAI_CANFD 28U
-#define SAFETY_MAZDA_2019 29U
+#define SAFETY_MAZDA_2019 30U
 
 #define TORQUE_CHK_LOG_TAG "steer_torque_cmd_checks violation: "
 #define ANGLE_CHK_LOG_TAG "steer_angle_cmd_checks violation: "
