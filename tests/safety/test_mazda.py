@@ -12,7 +12,7 @@ class TestMazdaSafety(common.PandaSafetyTest, common.DriverTorqueSteeringSafetyT
   STANDSTILL_THRESHOLD = .1
   RELAY_MALFUNCTION_ADDR = 0x243
   RELAY_MALFUNCTION_BUS = 0
-  FWD_BLACKLISTED_ADDRS = {2: [0x243, 0x440]}
+  FWD_BLACKLISTED_ADDRS = {0: [0x249,], 2: [0x243, 0x440, 0x249]}
   FWD_BUS_LOOKUP = {0: 2, 2: 0}
 
   MAX_RATE_UP = 10

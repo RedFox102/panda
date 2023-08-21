@@ -134,11 +134,13 @@ static int mazda_tx_hook(CANPacket_t *to_send) {
 
 static int mazda_fwd_hook(int bus, int addr) {
   int bus_fwd = -1;
-
+  bool block = (addr == MAZDA_LKAS2);
   if (bus == MAZDA_MAIN) {
-    bus_fwd = MAZDA_CAM;
+    if (!block) {
+      bus_fwd = MAZDA_CAM;
+    }
   } else if (bus == MAZDA_CAM) {
-    bool block = (addr == MAZDA_LKAS) || (addr == MAZDA_LKAS_HUD);
+    block |= (addr == MAZDA_LKAS) || (addr == MAZDA_LKAS_HUD);
     if (!block) {
       bus_fwd = MAZDA_MAIN;
     }
