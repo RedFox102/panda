@@ -114,7 +114,7 @@ static int mazda_tx_hook(CANPacket_t *to_send) {
       int desired_torque = (((GET_BYTE(to_send, 0) & 0x0FU) << 8) | GET_BYTE(to_send, 1)) - 2048U;
 
       if (steer_torque_cmd_checks(desired_torque, -1, MAZDA_STEERING_LIMITS)) {
-        //tx = 0;
+        tx = 0;
       }
     }
 
@@ -226,7 +226,6 @@ static int mazda_2019_rx_hook(CANPacket_t *to_push) {
           default: // default address main
             break;
         }
-        generic_rx_checks(addr == MAZDA_2019_SPEED);
         break; // end MAZDA_MAIN
 
       case MAZDA_CAM:
@@ -260,7 +259,7 @@ static int mazda_2019_rx_hook(CANPacket_t *to_push) {
       default: // default bus
         break;
     }
-    
+    generic_rx_checks((addr == MAZDA_2019_SPEED) && (bus == MAZDA_MAIN));
   }
 
   return valid;
@@ -278,7 +277,7 @@ static int mazda_2019_tx_hook(CANPacket_t *to_send) {
     if (addr == MAZDA_2019_LKAS) {
       int desired_torque = (int16_t)((GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1)); // signal is signed
       if (steer_torque_cmd_checks(desired_torque, -1, MAZDA_2019_STEERING_LIMITS)) {
-        //tx = 0;
+        tx = 0;
       }
     }
   }

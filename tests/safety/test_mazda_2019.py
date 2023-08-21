@@ -53,7 +53,8 @@ class TestMazda2019Safety(common.PandaSafetyTest, common.DriverTorqueSteeringSaf
     return self.packer.make_can_msg_panda("ENGINE_DATA", 2, values)
 
   def _pcm_status_msg(self, enable):
-    values = {"CRZ_ENABLED": enable}
+    values = {"CRZ_ENABLED": enable,
+              "PRE_ENABLE": enable}
     return self.packer.make_can_msg_panda("CRUZE_STATE", 0, values)
 
 if __name__ == "__main__":
