@@ -2,12 +2,19 @@
 #define MAZDA_LKAS          0x243
 #define MAZDA_LKAS2         0x249
 #define MAZDA_LKAS_HUD      0x440
-#define MAZDA_CRZ_CTRL      0x21c
 #define MAZDA_CRZ_BTNS      0x09d
 #define TI_STEER_TORQUE     0x24A
 #define MAZDA_STEER_TORQUE  0x240
 #define MAZDA_ENGINE_DATA   0x202
 #define MAZDA_PEDALS        0x165
+#define MAZDA_CRZ_EVENTS    0x21f
+
+// UDS TX/RX address for VCM/RADAR (GEN 0/1)
+#define MAZDA_RADAR         0x764
+
+// Cruise messages transmitted by VCM/Radar
+#define MAZDA_CRZ_INFO      0x21b
+#define MAZDA_CRZ_CTRL      0x21c
 
 // CAN bus numbers
 #define MAZDA_MAIN 0
@@ -25,10 +32,11 @@ const SteeringLimits MAZDA_STEERING_LIMITS = {
   .type = TorqueDriverLimited,
 };
 
-const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8},{MAZDA_LKAS2, 1, 8}, {MAZDA_CRZ_BTNS, 0, 8}, {MAZDA_LKAS_HUD, 0, 8}};
+const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8},{MAZDA_LKAS2, 1, 8}, {MAZDA_CRZ_BTNS, 0, 8}, {MAZDA_LKAS_HUD, 0, 8}, {MAZDA_RADAR, 0, 8}, {MAZDA_CRZ_CTRL, 0, 8}, {MAZDA_CRZ_INFO, 0, 8}};
 
 AddrCheckStruct mazda_addr_checks[] = {
   {.msg = {{MAZDA_CRZ_CTRL,     0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_CRZ_EVENTS,   0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
   {.msg = {{MAZDA_CRZ_BTNS,     0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
   {.msg = {{MAZDA_STEER_TORQUE, 0, 8, .expected_timestep = 12000U}, { 0 }, { 0 }}},
   {.msg = {{MAZDA_ENGINE_DATA,  0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},
@@ -44,6 +52,7 @@ AddrCheckStruct mazda_ti_addr_checks[] = {
 #define MAZDA_TI_ADDR_CHECKS_LEN (sizeof(mazda_ti_addr_checks) / sizeof(mazda_ti_addr_checks[0]))
 addr_checks mazda_ti_rx_checks = {mazda_ti_addr_checks, MAZDA_TI_ADDR_CHECKS_LEN};
 
+const uint16_t MAZDA_PARAM_RADARLESS = 1;
 
 // track msgs coming from OP so that we know what CAM msgs to drop and what to forward
 static int mazda_rx_hook(CANPacket_t *to_push) {
@@ -70,8 +79,8 @@ static int mazda_rx_hook(CANPacket_t *to_push) {
     }
 
     // enter controls on rising edge of ACC, exit controls on ACC off
-    if (addr == MAZDA_CRZ_CTRL) {
-      bool cruise_engaged = GET_BYTE(to_push, 0) & 0x8U;
+    if (addr == MAZDA_CRZ_EVENTS) {
+      bool cruise_engaged = GET_BYTE(to_push, 2) & 0x1U;
       pcm_cruise_check(cruise_engaged);
     }
 
@@ -137,7 +146,7 @@ static int mazda_fwd_hook(int bus, int addr) {
   bool block = (addr == MAZDA_LKAS2);
   if (bus == MAZDA_MAIN) {
     if (!block) {
-      bus_fwd = MAZDA_CAM;
+      bus_fwd = MAZDA_CAM; 
     }
   } else if (bus == MAZDA_CAM) {
     block |= (addr == MAZDA_LKAS) || (addr == MAZDA_LKAS_HUD);
@@ -149,6 +158,7 @@ static int mazda_fwd_hook(int bus, int addr) {
   }
 
   return bus_fwd;
+}
 }
 
 static const addr_checks* mazda_init(uint16_t param) {
