@@ -159,7 +159,6 @@ static int mazda_fwd_hook(int bus, int addr) {
 
   return bus_fwd;
 }
-}
 
 static const addr_checks* mazda_init(uint16_t param) {
   UNUSED(param);
