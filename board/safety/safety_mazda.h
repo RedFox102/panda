@@ -78,9 +78,8 @@ static int mazda_rx_hook(CANPacket_t *to_push) {
     }
 
     // enter controls on rising edge of ACC, exit controls on ACC off
-    if (addr == MAZDA_PEDALS) {
-      bool cruise_engaged = GET_BYTE(to_push, 0) & 0x8;
-      pcm_cruise_check(cruise_engaged);
+    if (addr == MAZDA_CRZ_CTRL) {
+      bool cruise_engaged = GET_BYTE(to_push, 0) & 0x8U;
     }
 
     if (addr == MAZDA_ENGINE_DATA) {
@@ -93,7 +92,16 @@ static int mazda_rx_hook(CANPacket_t *to_push) {
 
     generic_rx_checks((addr == MAZDA_LKAS));
   }
-
+  
+  if (valid && (GET_BUS(to_push) == MAZDA_MAIN)) {
+    int addr = GET_ADDR(to_push);
+    // enter controls on rising edge of ACC, exit controls on ACC off
+    if (addr == MAZDA_CRZ_CTRL) {
+      bool cruise_engaged = GET_BYTE(to_push, 0) & 0x8U;
+      pcm_cruise_check(cruise_engaged);
+    }
+  }
+  
   if (valid && (GET_BUS(to_push) == MAZDA_AUX)) {
     int addr = GET_ADDR(to_push);
     if (addr == TI_STEER_TORQUE) {
@@ -148,7 +156,7 @@ static int mazda_fwd_hook(int bus, int addr) {
       bus_fwd = MAZDA_CAM; 
     }
   } else if (bus == MAZDA_CAM) {
-    block |= (addr == MAZDA_LKAS) || (addr == MAZDA_LKAS_HUD);
+    block |= (addr == MAZDA_LKAS) || (addr == MAZDA_LKAS_HUD) || (addr == MAZDA_CRZ_CTRL) || (addr == MAZDA_CRZ_INFO);
     if (!block) {
       bus_fwd = MAZDA_MAIN;
     }
