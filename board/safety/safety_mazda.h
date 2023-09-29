@@ -35,7 +35,7 @@ const SteeringLimits MAZDA_STEERING_LIMITS = {
 const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8},{MAZDA_LKAS2, 1, 8}, {MAZDA_CRZ_BTNS, 0, 8}, {MAZDA_LKAS_HUD, 0, 8}, {MAZDA_RADAR, 0, 8}, {MAZDA_CRZ_CTRL, 0, 8}, {MAZDA_CRZ_INFO, 0, 8}};
 
 AddrCheckStruct mazda_addr_checks[] = {
-  {.msg = {{MAZDA_CRZ_EVENTS,   0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_CRZ_CTRL,   2, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
   {.msg = {{MAZDA_CRZ_BTNS,     0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
   {.msg = {{MAZDA_STEER_TORQUE, 0, 8, .expected_timestep = 12000U}, { 0 }, { 0 }}},
   {.msg = {{MAZDA_ENGINE_DATA,  0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},
