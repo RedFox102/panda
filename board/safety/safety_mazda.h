@@ -94,15 +94,6 @@ static int mazda_rx_hook(CANPacket_t *to_push) {
     generic_rx_checks((addr == MAZDA_LKAS));
   }
   
-  if (valid && (GET_BUS(to_push) == MAZDA_MAIN)) {
-    int addr = GET_ADDR(to_push);
-    // enter controls on rising edge of ACC, exit controls on ACC off
-    if (addr == MAZDA_CRZ_CTRL) {
-      bool cruise_engaged = GET_BYTE(to_push, 0) & 0x8U;
-      pcm_cruise_check(cruise_engaged);
-    }
-  }
-  
   if (valid && (GET_BUS(to_push) == MAZDA_AUX)) {
     int addr = GET_ADDR(to_push);
     if (addr == TI_STEER_TORQUE) {
