@@ -51,8 +51,6 @@ AddrCheckStruct mazda_ti_addr_checks[] = {
 #define MAZDA_TI_ADDR_CHECKS_LEN (sizeof(mazda_ti_addr_checks) / sizeof(mazda_ti_addr_checks[0]))
 addr_checks mazda_ti_rx_checks = {mazda_ti_addr_checks, MAZDA_TI_ADDR_CHECKS_LEN};
 
-const uint16_t MAZDA_PARAM_RADARLESS = 1;
-
 // track msgs coming from OP so that we know what CAM msgs to drop and what to forward
 static int mazda_rx_hook(CANPacket_t *to_push) {
   bool valid = addr_safety_check(to_push, &mazda_rx_checks, NULL, NULL, NULL, NULL);
