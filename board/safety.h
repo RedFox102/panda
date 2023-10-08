@@ -261,11 +261,24 @@ void generic_rx_checks(bool stock_ecu_detected) {
   if (gas_pressed && !gas_pressed_prev && !(alternative_experience & ALT_EXP_DISABLE_DISENGAGE_ON_GAS)) {
     controls_allowed = false;
   }
+  // PFEIFER - AOL {{
+  if (gas_pressed && !gas_pressed_prev && !(alternative_experience & ALT_EXP_ENABLE_ALWAYS_ON_LATERAL)) {
+    lateral_controls_allowed = 0;
+  }
+  // }} PFEIFER - AOL
   gas_pressed_prev = gas_pressed;
 
   // exit controls on rising edge of brake press
   if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
     controls_allowed = false;
+  }
+  // PFEIFER - AOL {{
+  if (brake_pressed && (!brake_pressed_prev || vehicle_moving) && !(alternative_experience & ALT_EXP_ENABLE_ALWAYS_ON_LATERAL)) {
+    lateral_controls_allowed = 0;
+  }
+  // }} PFEIFER - AOL
+  if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
+    controls_allowed = 0;
   }
   brake_pressed_prev = brake_pressed;
 
@@ -273,6 +286,20 @@ void generic_rx_checks(bool stock_ecu_detected) {
   if (regen_braking && (!regen_braking_prev || vehicle_moving)) {
     controls_allowed = false;
   }
+  // PFEIFER - AOL {{
+  if (regen_braking && (!regen_braking_prev || vehicle_moving) && !(alternative_experience & ALT_EXP_ENABLE_ALWAYS_ON_LATERAL)) {
+    lateral_controls_allowed = 0;
+  }
+
+  // If always on lateral is not enabled we set lateral_controls_allowed to controls_allowed to maintain stock behavior
+  if (!(alternative_experience & ALT_EXP_ENABLE_ALWAYS_ON_LATERAL)) {
+    lateral_controls_allowed = controls_allowed;
+  }
+
+  if (controls_allowed == 1) { // always allow lateral_controls when long controls are allowed, makes syncing easier
+    lateral_controls_allowed = 1;
+  }
+  // }} PFEIFER - AOL
   regen_braking_prev = regen_braking;
 
   // check if stock ECU is on bus broken by car harness
@@ -341,6 +368,9 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   vehicle_moving = false;
   acc_main_on = false;
   cruise_button_prev = 0;
+  // PFEIFER - AOL {{
+  main_button_prev = 0;
+  // }} PFEIFER - AOL
   desired_torque_last = 0;
   rt_torque_last = 0;
   ts_angle_last = 0;
@@ -558,7 +588,10 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
   bool violation = false;
   uint32_t ts = microsecond_timer_get();
 
-  if (controls_allowed) {
+  //  if (controls_allowed) {
+  //  PFEIFER - AOL {{
+  if(lateral_controls_allowed) {
+  // }} PFEIFER - AOL
     // *** global torque limit check ***
     violation |= max_limit_check(desired_torque, limits.max_steer, -limits.max_steer)
               ? (safety_print(TORQUE_CHK_LOG_TAG "max_limit exceeded\n"), true) : false;
@@ -589,8 +622,12 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
   }
 
   // no torque if controls is not allowed
-  violation |= (!controls_allowed && (desired_torque != 0)) 
-            ? (safety_print(TORQUE_CHK_LOG_TAG "desired_torque != 0\n"), true) : false;
+//  if (!controls_allowed && (desired_torque != 0)) {
+//  PFEIFER - AOL {{
+  if(!lateral_controls_allowed && (desired_torque != 0)) {
+//  }} PFEIFER - AOL
+    violation = true;
+  }
 
   // certain safety modes set their steer request bit low for one or more frame at a
   // predefined max frequency to avoid steering faults in certain situations
@@ -626,7 +663,10 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
   }
 
   // reset to 0 if either controls is not allowed or there's a violation
-  if (violation || !controls_allowed) {
+//  if (violation || !controls_allowed) {
+//  PFEIFER - AOL {{
+  if (violation || !lateral_controls_allowed) {
+//  }} PFEIFER - AOL
     valid_steer_req_count = 0;
     invalid_steer_req_count = 0;
     desired_torque_last = 0;
@@ -642,7 +682,10 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
 bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const SteeringLimits limits) {
   bool violation = false;
 
-  if (controls_allowed && steer_control_enabled) {
+  //  if (controls_allowed && steer_control_enabled) {
+//  PFEIFER - AOL {{
+  if (lateral_controls_allowed && steer_control_enabled) {
+//  }} PFEIFER - AOL
     // convert floating point angle rate limits to integers in the scale of the desired angle on CAN,
     // add 1 to not false trigger the violation. also fudge the speed by 1 m/s so rate limits are
     // always slightly above openpilot's in case we read an updated speed in between angle commands
@@ -682,19 +725,15 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
 
   // Angle should either be 0 or same as current angle while not steering
   if (!steer_control_enabled) {
-    if (limits.inactive_angle_is_zero) {
-      violation |= (desired_angle != 0) 
-                ? (safety_print(ANGLE_CHK_LOG_TAG "steer control disabled, desired_angle != 0\n"), true) : false;
-    } else {
-      violation |= (max_limit_check(desired_angle, angle_meas.max + 1, angle_meas.min - 1))
-                ? (safety_print(ANGLE_CHK_LOG_TAG "steer control disabled, max_limit exceed"), true) : false;
-    }
+    violation |= (limits.inactive_angle_is_zero ? (desired_angle != 0) :
+                  max_limit_check(desired_angle, angle_meas.max + 1, angle_meas.min - 1));
   }
 
   // No angle control allowed when controls are not allowed
-  violation |= (!controls_allowed && steer_control_enabled)
-            ? (safety_print(ANGLE_CHK_LOG_TAG "steer_control_enabled\n"), true) : false;
-
+//  violation |= !controls_allowed && steer_control_enabled;
+//  PFEIFER - AOL {{
+  violation |= !lateral_controls_allowed && steer_control_enabled;
+//  }} PFEIFER - AOL
 
   return violation;
 }
